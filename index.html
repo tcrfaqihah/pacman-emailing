@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pac-Man English Quest - Form 3 Note Expansion</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for Arcade Aesthetic -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        pacman: '#FFE600',
+                        blinky: '#FF0000',
+                        pinky: '#FFB8FF',
+                        inky: '#00FFFF',
+                        clyde: '#FFB852',
+                        mazeBlue: '#1919A6',
+                        mazeDark: '#080821',
+                        neonGreen: '#39FF14',
+                    },
+                    fontFamily: {
+                        arcade: ['"Press Start 2P"', 'cursive'],
+                        sans: ['Rajdhani', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #050510;
+            color: #FFFFFF;
+            font-family: 'Rajdhani', sans-serif;
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(25, 25, 166, 0.15) 0%, transparent 80%),
+                linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 20px 20px, 20px 20px;
+        }
+
+        .arcade-border {
+            border: 4px solid #1919A6;
+            box-shadow: 0 0 15px #1919A6, inset 0 0 15px #1919A6;
+        }
+
+        .arcade-border-yellow {
+            border: 4px solid #FFE600;
+            box-shadow: 0 0 15px rgba(255, 230, 0, 0.6);
+        }
+
+        .arcade-btn {
+            transition: all 0.15s ease;
+            box-shadow: 0 5px 0 linear-gradient(#1919A6, #000);
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        .arcade-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.2);
+        }
+
+        .arcade-btn:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+
+        .pellet {
+            width: 12px;
+            height: 12px;
+            background-color: #FFB852;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #FFB852;
+            display: inline-block;
+        }
+
+        .power-pellet {
+            width: 20px;
+            height: 20px;
+            background-color: #FFFFFF;
+            border-radius: 50%;
+            box-shadow: 0 0 12px #FFFFFF;
+            animation: pulse 0.8s infinite alternate;
+            display: inline-block;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.8); opacity: 0.6; }
+            100% { transform: scale(1.2); opacity: 1; }
+        }
+
+        .pacman-sprite {
+            width: 32px;
+            height: 32px;
+            background-color: #FFE600;
+            border-radius: 50%;
+            clip-path: polygon(100% 0, 100% 100%, 0 100%, 0 0);
+            position: relative;
+        }
+
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #080821;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1919A6;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #FFE600;
+        }
+
+        .scanlines {
+            position: relative;
+            overflow: hidden;
+        }
+        .scanlines::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            z-index: 40;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between scanlines">
+
+    <!-- TOP AUDIO & NAVIGATION BAR -->
+    <header class="bg-mazeDark border-b-2 border-mazeBlue p-3 sm:px-8 flex justify-between items-center z-50">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="app.showPage('welcome')">
+            <div class="text-pacman text-2xl animate-bounce"><i class="fa-solid-ghost"></i><span class="font-arcade text-yellow-400 text-xl">C</span></div>
+            <h1 class="font-arcade text-xs sm:text-sm md:text-base text-pacman tracking-wider">PAC-MAN ENGLISH QUEST</h1>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <!-- Score & Streak Display (Visible during gameplay) -->
+            <div id="topStats" class="hidden flex items-center gap-4 text-xs sm:text-sm font-arcade">
+                <div class="text-yellow-400">SCORE: <span id="topScore">0</span></div>
+                <div class="text-pinky hidden sm:block">STREAK: <span id="topStreak">0</span>x</div>
+            </div>
+
+            <!-- Sound Toggle Button -->
+            <button id="soundBtn" onclick="soundManager.toggleSound()" class="px-3 py-1 bg-mazeBlue/50 hover:bg-mazeBlue text-white rounded border border-cyan-400 text-xs flex items-center gap-2">
+                <i id="soundIcon" class="fa-solid fa-volume-high text-yellow-400"></i>
+                <span class="hidden sm:inline font-semibold">SFX</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="flex-grow flex items-center justify-center p-3 sm:p-6">
+        
+        <!-- PAGE 1: WELCOME & SETUP -->
+        <section id="pageWelcome" class="w-full max-w-3xl bg-mazeDark/90 arcade-border rounded-xl p-4 sm:p-8 relative">
+            <div class="text-center space-y-4">
+                <div class="inline-block bg-black/60 px-4 py-2 rounded-full border border-yellow-400/30">
+                    <span class="text-cyan-300 font-bold text-xs sm:text-sm uppercase tracking-widest">Malaysian Form 3 English (CEFR A2-B1)</span>
+                </div>
+                <h2 class="font-arcade text-lg sm:text-2xl text-pacman tracking-wide drop-shadow-[0_4px_0_rgba(25,25,166,1)]">
+                    NOTE EXPANSION ESSAY ARCADE
+                </h2>
+                <p class="text-gray-300 text-sm sm:text-base max-w-xl mx-auto">
+                    Power up Pac-Man's essay writing engine! Identify action verbs and repair corrupted emails to earn high scores and climb the Form 3 leaderboard.
+                </p>
+            </div>
+
+            <!-- PAC-MAN & GHOST DECORATIVE ROW -->
+            <div class="my-6 flex justify-center items-center gap-4 py-3 bg-black/40 rounded-lg border border-mazeBlue/40">
+                <i class="fa-solid fa-ghost text-blinky text-2xl animate-pulse"></i>
+                <i class="fa-solid fa-ghost text-pinky text-2xl animate-pulse" style="animation-delay: 0.2s"></i>
+                <div class="pellet"></div>
+                <div class="pellet"></div>
+                <div class="power-pellet"></div>
+                <div class="pellet"></div>
+                <i class="fa-solid fa-ghost text-inky text-2xl animate-pulse" style="animation-delay: 0.4s"></i>
+                <i class="fa-solid fa-ghost text-clyde text-2xl animate-pulse" style="animation-delay: 0.6s"></i>
+            </div>
+
+            <!-- SETUP FORM -->
+            <form id="setupForm" onsubmit="app.startQuest(event)" class="space-y-4 max-w-md mx-auto">
+                <div>
+                    <label class="block text-cyan-300 text-xs font-arcade mb-1">STUDENT NAME:</label>
+                    <input type="text" id="studentName" required placeholder="Enter your full name" 
+                        class="w-full bg-black/80 border-2 border-mazeBlue focus:border-pacman text-white px-4 py-2.5 rounded text-lg outline-none font-semibold transition">
+                </div>
+
+                <div>
+                    <label class="block text-cyan-300 text-xs font-arcade mb-1">SELECT CLASS:</label>
+                    <select id="studentClass" required class="w-full bg-black/80 border-2 border-mazeBlue focus:border-pacman text-white px-4 py-2.5 rounded text-lg outline-none font-semibold transition cursor-pointer">
+                        <option value="" disabled selected>Choose your class</option>
+                        <option value="1 Ibnu Sina">1 Ibnu Sina</option>
+                        <option value="1 Al Batani">1 Al Batani</option>
+                        <option value="2 Al Farabi">2 Al Farabi</option>
+                        <option value="3 Ibnu Sina">3 Ibnu Sina</option>
+                    </select>
+                </div>
+
+                <div class="pt-2 flex flex-col sm:flex-row gap-3">
+                    <button type="button" onclick="app.toggleModal('instructionsModal', true)" class="w-full sm:w-1/3 bg-gray-800 hover:bg-gray-700 text-cyan-300 font-bold py-3 px-4 rounded border border-cyan-500/50 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-circle-info"></i> HOW TO PLAY
+                    </button>
+                    <button type="submit" class="w-full sm:w-2/3 bg-pacman hover:bg-yellow-300 text-black font-arcade text-xs sm:text-sm py-3 px-4 rounded arcade-btn flex items-center justify-center gap-2 font-bold">
+                        <i class="fa-solid fa-play"></i> START QUEST
+                    </button>
+                </div>
+            </form>
+
+            <div class="mt-6 text-center">
+                <button onclick="app.showPage('teacher')" class="text-xs text-cyan-400 hover:text-pacman underline font-semibold transition">
+                    <i class="fa-solid fa-chart-line mr-1"></i> Teacher Dashboard & Rankings
+                </button>
+            </div>
+        </section>
+
+        <!-- PAGE 2: ACTION VERB MAZE (20 QUESTIONS) -->
+        <section id="pageVerbMaze" class="hidden w-full max-w-4xl bg-mazeDark/95 arcade-border rounded-xl p-4 sm:p-6 space-y-6">
+            <!-- Stage Header & Progress -->
+            <div class="flex flex-col sm:flex-row justify-between items-center border-b-2 border-mazeBlue pb-4 gap-2">
+                <div>
+                    <span class="text-xs font-arcade text-cyan-400">STAGE 1 / 2</span>
+                    <h2 class="font-arcade text-sm sm:text-base text-pacman">ACTION VERB MAZE</h2>
+                </div>
+                <div class="flex items-center gap-4 text-xs font-arcade">
+                    <div class="bg-black/60 px-3 py-1.5 rounded border border-yellow-400/40 text-yellow-300">
+                        VERB PTS: <span id="verbScoreDisplay">0</span>
+                    </div>
+                    <div class="bg-black/60 px-3 py-1.5 rounded border border-cyan-400/40 text-cyan-300">
+                        QUESTION: <span id="verbIndexDisplay">1</span>/20
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Visual Pac-Man Path (20 Pellets) -->
+            <div class="bg-black/80 p-3 rounded-lg border border-mazeBlue flex items-center justify-between overflow-x-auto gap-1 sm:gap-2 relative min-h-[50px]" id="mazePath">
+                <!-- Dynamically Generated 20 pellets with Pacman moving -->
+            </div>
+
+            <!-- Question Card -->
+            <div class="bg-black/60 p-5 rounded-lg border border-cyan-500/30 space-y-4">
+                <div class="flex items-center gap-2 text-xs font-arcade text-pinky">
+                    <i class="fa-solid fa-lightbulb"></i>
+                    <span>TASK: IDENTIFY & TYPE THE MAIN ACTION VERB FROM THE ESSAY SENTENCE</span>
+                </div>
+
+                <div class="bg-mazeDark/80 p-4 rounded border-l-4 border-pacman text-base sm:text-lg text-gray-100 font-medium leading-relaxed" id="sentenceText">
+                    <!-- Sentence Inserted Here -->
+                </div>
+
+                <!-- Input Form -->
+                <form id="verbForm" onsubmit="app.submitVerbAnswer(event)" class="space-y-3 pt-2">
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input type="text" id="verbInput" autocomplete="off" required placeholder="Type action verb here (e.g., organized, cleaned)"
+                            class="flex-grow bg-black border-2 border-mazeBlue focus:border-pacman text-pacman text-lg font-bold px-4 py-2.5 rounded outline-none">
+                        <button type="submit" class="bg-pacman hover:bg-yellow-300 text-black font-arcade text-xs px-6 py-3 rounded arcade-btn flex items-center justify-center gap-2">
+                            EAT PELLET <i class="fa-solid fa-utensils"></i>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Feedback Area -->
+                <div id="verbFeedback" class="min-h-[24px] text-sm font-bold text-center"></div>
+            </div>
+        </section>
+
+        <!-- PAGE 3: GHOST ERROR FIXER (5 EMAIL SETS, 8 ERRORS EACH) -->
+        <section id="pageEmailFixer" class="hidden w-full max-w-5xl bg-mazeDark/95 arcade-border rounded-xl p-4 sm:p-6 space-y-5">
+            <!-- Stage Header -->
+            <div class="flex flex-col sm:flex-row justify-between items-center border-b-2 border-mazeBlue pb-3 gap-2">
+                <div>
+                    <span class="text-xs font-arcade text-pinky">STAGE 2 / 2</span>
+                    <h2 class="font-arcade text-sm sm:text-base text-pacman">GHOST ERROR FIXER (EMAIL EDITING)</h2>
+                </div>
+                <div class="flex items-center gap-3 text-xs font-arcade">
+                    <div class="bg-black/60 px-3 py-1.5 rounded border border-pinky/40 text-pinky">
+                        SET: <span id="emailSetDisplay">1</span>/5
+                    </div>
+                    <div class="bg-black/60 px-3 py-1.5 rounded border border-yellow-400/40 text-yellow-300">
+                        EMAIL PTS: <span id="emailScoreDisplay">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Set Progress Tabs -->
+            <div class="flex justify-between items-center gap-2 overflow-x-auto pb-1" id="emailTabs">
+                <!-- Dynamically loaded tabs -->
+            </div>
+
+            <!-- Context Info -->
+            <div class="bg-black/70 p-3 rounded-md border border-mazeBlue/60 flex justify-between items-center text-xs sm:text-sm">
+                <div class="flex items-center gap-2 text-yellow-300">
+                    <i class="fa-solid fa-ghost text-blinky"></i>
+                    <span>Fix all <strong>8 errors</strong> (capitalization, punctuation, spelling, word choice) in this email!</span>
+                </div>
+                <div class="font-arcade text-cyan-300">
+                    ERRORS FIXED: <span id="errorsFixedCount" class="text-pacman text-base">0</span> / 8
+                </div>
+            </div>
+
+            <!-- Interactive Side-by-Side or Click-to-Fix Workbench -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <!-- Left: Corrupted Email (Interactive Highlighted Errors) -->
+                <div class="bg-black/90 p-4 rounded-lg border border-blinky/50 space-y-3">
+                    <div class="flex justify-between items-center border-b border-gray-800 pb-2">
+                        <span class="font-arcade text-xs text-blinky flex items-center gap-1">
+                            <i class="fa-solid fa-bug"></i> CORRUPTED EMAIL (CLICK ERROR)
+                        </span>
+                        <span class="text-xs text-gray-400" id="emailSubjectLine">Subject: ...</span>
+                    </div>
+                    <div id="interactiveEmailText" class="text-base sm:text-lg leading-relaxed text-gray-200 font-sans space-y-2 select-none min-h-[220px]">
+                        <!-- Dynamic Email Tokens rendered here -->
+                    </div>
+                </div>
+
+                <!-- Right: Correction Input Console -->
+                <div class="bg-black/90 p-4 rounded-lg border border-cyan-500/50 flex flex-col justify-between space-y-3">
+                    <div>
+                        <div class="flex justify-between items-center border-b border-gray-800 pb-2 mb-3">
+                            <span class="font-arcade text-xs text-cyan-400 flex items-center gap-1">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> POWER-PELLET REPAIR TOOL
+                            </span>
+                            <span class="text-xs text-yellow-400 font-bold" id="selectedWordLabel">No word selected</span>
+                        </div>
+
+                        <!-- Correction Active Panel -->
+                        <div id="correctionPanel" class="space-y-3 hidden">
+                            <p class="text-xs text-gray-300">Selected target: <span id="currentTargetToken" class="font-bold text-red-400 bg-red-950/60 px-2 py-0.5 rounded"></span></p>
+                            <label class="block text-xs font-arcade text-cyan-300">TYPE CORRECT WORD / PUNCTUATION:</label>
+                            <div class="flex gap-2">
+                                <input type="text" id="correctionInput" autocomplete="off" placeholder="Type correction here..." 
+                                    class="w-full bg-black border-2 border-mazeBlue focus:border-pacman text-white px-3 py-2 rounded text-base outline-none">
+                                <button onclick="app.applyFix()" class="bg-neonGreen hover:bg-green-400 text-black font-bold px-4 py-2 rounded font-arcade text-xs">
+                                    FIX <i class="fa-solid fa-check"></i>
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-400 italic" id="errorHint">Hint: Check spelling or grammar!</p>
+                        </div>
+
+                        <div id="noSelectionPrompt" class="text-center py-10 text-gray-500 space-y-2">
+                            <i class="fa-solid fa-hand-pointer text-3xl animate-bounce text-mazeBlue"></i>
+                            <p class="text-sm">Click on any incorrect word or punctuation mark in the corrupted email on the left to fix it!</p>
+                        </div>
+                    </div>
+
+                    <!-- List of Solved Errors in Current Email -->
+                    <div class="border-t border-gray-800 pt-3">
+                        <span class="text-xs font-arcade text-yellow-400 block mb-2">FIXED ERRORS LOG:</span>
+                        <div id="fixedLog" class="flex flex-wrap gap-1.5 min-h-[40px] max-h-[90px] overflow-y-auto">
+                            <!-- Badges of fixed errors -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation between sets -->
+            <div class="flex justify-between items-center pt-2">
+                <button id="prevSetBtn" onclick="app.changeEmailSet(-1)" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-cyan-300 text-xs font-arcade rounded border border-gray-600">
+                    &lt; PREV EMAIL
+                </button>
+                <button id="nextSetBtn" onclick="app.changeEmailSet(1)" class="px-6 py-2.5 bg-pacman hover:bg-yellow-300 text-black text-xs font-arcade rounded arcade-btn">
+                    NEXT EMAIL &gt;
+                </button>
+            </div>
+        </section>
+
+        <!-- PAGE 4: TEACHER DASHBOARD & LEADERBOARD -->
+        <section id="pageTeacher" class="hidden w-full max-w-5xl bg-mazeDark/95 arcade-border rounded-xl p-4 sm:p-6 space-y-6">
+            <!-- Header -->
+            <div class="flex flex-col sm:flex-row justify-between items-center border-b-2 border-mazeBlue pb-4 gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="bg-pacman text-black p-2 rounded-lg font-arcade text-xl"><i class="fa-solid fa-trophy"></i></div>
+                    <div>
+                        <h2 class="font-arcade text-sm sm:text-base text-pacman">TEACHER DASHBOARD & LEADERBOARD</h2>
+                        <p class="text-xs text-gray-400">Class Performance Analytics & Competitive Ranking</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="app.exportData()" class="px-3 py-1.5 bg-green-700 hover:bg-green-600 text-white text-xs font-bold rounded flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-csv"></i> Export CSV
+                    </button>
+                    <button onclick="app.clearLeaderboard()" class="px-3 py-1.5 bg-red-800 hover:bg-red-700 text-white text-xs font-bold rounded flex items-center gap-1.5">
+                        <i class="fa-solid fa-trash"></i> Reset Data
+                    </button>
+                    <button onclick="app.showPage('welcome')" class="px-3 py-1.5 bg-mazeBlue hover:bg-blue-600 text-white text-xs font-bold rounded flex items-center gap-1">
+                        <i class="fa-solid fa-house"></i> Home
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary Analytics Cards -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                <div class="bg-black/80 p-3 sm:p-4 rounded-lg border border-cyan-500/40 text-center">
+                    <span class="text-gray-400 text-xs block font-arcade">TOTAL PLAYERS</span>
+                    <span id="statTotalStudents" class="text-2xl sm:text-3xl font-bold text-cyan-300">0</span>
+                </div>
+                <div class="bg-black/80 p-3 sm:p-4 rounded-lg border border-yellow-500/40 text-center">
+                    <span class="text-gray-400 text-xs block font-arcade">AVG ACCURACY</span>
+                    <span id="statAvgAccuracy" class="text-2xl sm:text-3xl font-bold text-yellow-300">0%</span>
+                </div>
+                <div class="bg-black/80 p-3 sm:p-4 rounded-lg border border-pinky/40 text-center">
+                    <span class="text-gray-400 text-xs block font-arcade">TOP CLASS</span>
+                    <span id="statTopClass" class="text-lg sm:text-xl font-bold text-pinky truncate block mt-1">-</span>
+                </div>
+                <div class="bg-black/80 p-3 sm:p-4 rounded-lg border border-neonGreen/40 text-center">
+                    <span class="text-gray-400 text-xs block font-arcade">HIGHEST SCORE</span>
+                    <span id="statHighScore" class="text-2xl sm:text-3xl font-bold text-neonGreen">0</span>
+                </div>
+            </div>
+
+            <!-- Leaderboard Controls -->
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-3 bg-black/50 p-3 rounded-lg border border-mazeBlue">
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <label class="text-xs font-arcade text-gray-300 whitespace-nowrap">FILTER BY CLASS:</label>
+                    <select id="leaderboardFilter" onchange="app.renderLeaderboard()" class="bg-black border border-mazeBlue text-white text-sm px-3 py-1.5 rounded outline-none focus:border-pacman w-full sm:w-auto">
+                        <option value="All">All Classes</option>
+                        <option value="1 Ibnu Sina">1 Ibnu Sina</option>
+                        <option value="1 Al Batani">1 Al Batani</option>
+                        <option value="2 Al Farabi">2 Al Farabi</option>
+                        <option value="3 Ibnu Sina">3 Ibnu Sina</option>
+                    </select>
+                </div>
+                <div class="text-xs text-gray-400 italic">
+                    * Scores combine Verb Maze + Email Fixer speed & accuracy.
+                </div>
+            </div>
+
+            <!-- Rankings Table -->
+            <div class="overflow-x-auto rounded-lg border border-mazeBlue bg-black/80">
+                <table class="w-full text-left text-xs sm:text-sm">
+                    <thead class="bg-mazeBlue/60 text-cyan-300 font-arcade text-[10px] sm:text-xs">
+                        <tr>
+                            <th class="p-3">RANK</th>
+                            <th class="p-3">STUDENT NAME</th>
+                            <th class="p-3">CLASS</th>
+                            <th class="p-3 text-center">VERB MAZE</th>
+                            <th class="p-3 text-center">EMAIL FIXER</th>
+                            <th class="p-3 text-center">TOTAL SCORE</th>
+                            <th class="p-3 text-center">BADGE TITLE</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboardBody" class="divide-y divide-gray-800">
+                        <!-- Dynamic Rows -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- RESULT CERTIFICATE MODAL -->
+    <div id="resultModal" class="hidden fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-50">
+        <div class="bg-mazeDark arcade-border-yellow rounded-xl p-6 max-w-lg w-full text-center space-y-5 relative">
+            <div class="text-yellow-400 text-4xl animate-bounce"><i class="fa-solid fa-award"></i></div>
+            <h2 class="font-arcade text-xl text-pacman">QUEST COMPLETED!</h2>
+            <div class="bg-black/60 p-4 rounded-lg border border-mazeBlue space-y-2 text-left text-sm">
+                <p class="text-gray-300"><strong class="text-cyan-300">Student:</strong> <span id="resName"></span></p>
+                <p class="text-gray-300"><strong class="text-cyan-300">Class:</strong> <span id="resClass"></span></p>
+                <p class="text-gray-300"><strong class="text-cyan-300">Verb Maze Score:</strong> <span id="resVerb" class="text-yellow-400 font-bold"></span> pts</p>
+                <p class="text-gray-300"><strong class="text-cyan-300">Email Fixer Score:</strong> <span id="resEmail" class="text-pinky font-bold"></span> pts</p>
+                <p class="text-gray-300"><strong class="text-cyan-300">Total Arcade Score:</strong> <span id="resTotal" class="text-neonGreen font-extrabold text-lg"></span> pts</p>
+                <p class="text-gray-300"><strong class="text-cyan-300">Earned Title:</strong> <span id="resTitle" class="font-arcade text-xs text-yellow-300"></span></p>
+            </div>
+            <div class="flex gap-3 justify-center">
+                <button onclick="app.showPage('teacher'); app.toggleModal('resultModal', false);" class="bg-pacman hover:bg-yellow-300 text-black font-arcade text-xs px-5 py-3 rounded arcade-btn">
+                    VIEW LEADERBOARD <i class="fa-solid fa-trophy"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- INSTRUCTIONS MODAL -->
+    <div id="instructionsModal" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+        <div class="bg-mazeDark arcade-border rounded-xl p-6 max-w-xl w-full space-y-4 relative text-sm">
+            <div class="flex justify-between items-center border-b border-mazeBlue pb-2">
+                <h3 class="font-arcade text-pacman text-sm">HOW TO PLAY PAC-MAN ENGLISH QUEST</h3>
+                <button onclick="app.toggleModal('instructionsModal', false)" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-3 text-gray-200 text-xs sm:text-sm max-h-[60vh] overflow-y-auto pr-2">
+                <p class="text-yellow-300 font-bold">Welcome Form 3 Students! Master Note Expansion Essays with Pac-Man!</p>
+                <div class="space-y-1">
+                    <strong class="text-cyan-300">Stage 1: Action Verb Maze (20 Questions)</strong>
+                    <p class="text-gray-300">Read each essay sentence and extract the main action verb (e.g., <em>organized, cleaned, participated</em>). Type it to make Pac-Man eat pellets and score points!</p>
+                </div>
+                <div class="space-y-1">
+                    <strong class="text-pinky">Stage 2: Ghost Error Fixer (5 Email Sets)</strong>
+                    <p class="text-gray-300">Blinky and ghosts corrupted 5 Form 3 student emails with 8 errors each (Capitalization, Punctuation, Spelling, Word Choice). Click on errors in the text and type the correction!</p>
+                </div>
+                <div class="space-y-1">
+                    <strong class="text-neonGreen">Scoring & Badges:</strong>
+                    <p class="text-gray-300">Maintain streaks for multiplier bonuses. Complete both stages to earn titles like <em>Pac-Master</em> or <em>Arcade Legend</em> and lead your class!</p>
+                </div>
+            </div>
+            <div class="text-center pt-2">
+                <button onclick="app.toggleModal('instructionsModal', false)" class="bg-mazeBlue hover:bg-blue-600 text-white font-arcade text-xs px-6 py-2.5 rounded">
+                    GOT IT!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-black/90 border-t border-mazeBlue/50 py-3 text-center text-xs text-gray-400 font-arcade">
+        <p class="tracking-wider">DESIGNED BY TEACHER FAQIHAH</p>
+    </footer>
+
+    <!-- AUDIO SYNTHESIZER (WEB AUDIO API) -->
+    <script>
+        class SoundManager {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+            }
+
+            toggleSound() {
+                this.muted = !this.muted;
+                const icon = document.getElementById('soundIcon');
+                if (this.muted) {
+                    icon.className = 'fa-solid fa-volume-xmark text-gray-400';
+                } else {
+                    icon.className = 'fa-solid fa-volume-high text-yellow-400';
+                    this.playPelletSound();
+                }
+            }
+
+            playPelletSound() {
+                if (this.muted) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.08);
+            }
+
+            playCorrectSound() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+                osc.frequency.setValueAtTime(1046.50, now + 0.24); // C6
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(now + 0.35);
+            }
+
+            playWrongSound() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(110, now + 0.2);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(now + 0.2);
+            }
+
+            playPowerPelletSound() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.linearRampToValueAtTime(800, now + 0.15);
+                osc.frequency.linearRampToValueAtTime(1200, now + 0.3);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(now + 0.35);
+            }
+        }
+
+        const soundManager = new SoundManager();
+
+        /* QUESTION DATASETS FOR CEFR A2-B1 NOTE EXPANSION ESSAYS */
+        const ACTION_VERB_DATA = [
+            { sentence: "The Form 3 students organized a recycling campaign to reduce plastic waste in school.", verb: "organized" },
+            { sentence: "Encik Razak delivered an inspiring speech during the annual School Sports Day.", verb: "delivered" },
+            { sentence: "We collected old newspapers and tin cans from nearby houses yesterday.", verb: "collected" },
+            { sentence: "My classmates painted a colorful mural on the canteen wall last Saturday.", verb: "painted" },
+            { sentence: "The prefects guided the primary school visitors around the science exhibition.", verb: "guided" },
+            { sentence: "Our English teacher encouraged us to join the essay writing competition.", verb: "encouraged" },
+            { sentence: "The scout members constructed sturdy wooden tents near the riverbank.", verb: "constructed" },
+            { sentence: "Everyone celebrated Hari Raya with delicious traditional delicacies at school.", verb: "celebrated" },
+            { sentence: "The school principal presented golden trophies to the outstanding athletes.", verb: "presented" },
+            { sentence: "We cleaned the muddy drain behind the science laboratory during gotong-royong.", verb: "cleaned" },
+            { sentence: "The librarian sorted new storybooks into different categories on the shelves.", verb: "sorted" },
+            { sentence: "Our team practiced football maneuvers diligently every evening after class.", verb: "practiced" },
+            { sentence: "The club president announced the upcoming trip to Penang National Park.", verb: "announced" },
+            { sentence: "Volunteers distributed food packets to flood victims in the community center.", verb: "distributed" },
+            { sentence: "Students discussed environmental solutions in small groups during the workshop.", verb: "discussed" },
+            { sentence: "The band performed energetic patriotic songs during the Merdeka celebration.", verb: "performed" },
+            { sentence: "My family visited the historic museum in Melaka during the school holidays.", verb: "visited" },
+            { sentence: "She submitted her completed note expansion draft before the deadline.", verb: "submitted" },
+            { sentence: "We planted twenty saplings in the school garden to promote greening.", verb: "planted" },
+            { sentence: "The counselor advised students to manage their study time wisely.", verb: "advised" }
+        ];
+
+        // 5 Email Sets with 8 Errors Each
+        const EMAIL_SETS = [
+            {
+                id: 1,
+                subject: "Subject: Reflections on Our Holiday Camping Trip",
+                tokens: [
+                    { id: 0, text: "Dear", isError: false },
+                    { id: 1, text: "amir,", isError: true, correct: "Amir,", hint: "Capitalization: Names start with uppercase" },
+                    { id: 2, text: "I", isError: false },
+                    { id: 3, text: "am", isError: false },
+                    { id: 4, text: "writing", isError: font => false },
+                    { id: 5, text: "to", isError: false },
+                    { id: 6, text: "share", isError: false },
+                    { id: 7, text: "my", isError: false },
+                    { id: 8, text: "exciting", isError: false },
+                    { id: 9, text: "camping", isError: false },
+                    { id: 10, text: "exparience", isError: true, correct: "experience", hint: "Spelling: Correct spelling of experience" },
+                    { id: 11, text: "at", isError: false },
+                    { id: 12, text: "Taman", isError: false },
+                    { id: 13, text: "Negara.", isError: false },
+                    { id: 14, text: "We", isError: false },
+                    { id: 15, text: "arrived", isError: false },
+                    { id: 16, text: "on", isError: false },
+                    { id: 17, text: "friday", isError: true, correct: "Friday", hint: "Capitalization: Days of week start with uppercase" },
+                    { id: 18, text: "afternoon", isError: false },
+                    { id: 19, text: "and", isError: false },
+                    { id: 20, text: "setted", isError: true, correct: "set", hint: "Word Choice/Grammar: Past tense of 'set' is 'set'" },
+                    { id: 21, text: "up", isError: false },
+                    { id: 22, text: "our", isError: false },
+                    { id: 23, text: "tents.", isError: false },
+                    { id: 24, text: "The", isError: false },
+                    { id: 25, text: "weather", isError: false },
+                    { id: 26, text: "was", isError: false },
+                    { id: 27, text: "very", isError: false },
+                    { id: 28, text: "beautiful", isError: false },
+                    { id: 29, text: "however", isError: true, correct: "however,", hint: "Punctuation: Needs comma after linking adverb" },
+                    { id: 30, text: "it", isError: false },
+                    { id: 31, text: "rained", isError: false },
+                    { id: 32, text: "at", isError: false },
+                    { id: 33, text: "night.", isError: false },
+                    { id: 34, text: "We", isError: false },
+                    { id: 35, text: "coocked", isError: true, correct: "cooked", hint: "Spelling: Single 'o' in cooked" },
+                    { id: 36, text: "delicious", isError: false },
+                    { id: 37, text: "curry", isError: false },
+                    { id: 38, text: "over", isError: false },
+                    { id: 39, text: "the", isError: false },
+                    { id: 40, text: "campfire", isError: false },
+                    { id: 41, text: "and", isError: false },
+                    { id: 42, text: "singed", isError: true, correct: "sang", hint: "Word Choice: Past tense of sing is sang" },
+                    { id: 43, text: "patriotic", isError: false },
+                    { id: 44, text: "songs.", isError: false },
+                    { id: 45, text: "I", isError: false },
+                    { id: 46, text: "hope", isError: false },
+                    { id: 47, text: "you", isError: false },
+                    { id: 48, text: "can", isError: false },
+                    { id: 49, text: "join", isError: false },
+                    { id: 50, text: "us", isError: false },
+                    { id: 51, text: "next", isError: false },
+                    { id: 52, text: "time", isError: true, correct: "time.", hint: "Punctuation: Sentence must end with full stop" },
+                    { id: 53, text: "Your", isError: false },
+                    { id: 54, text: "friend,", isError: false },
+                    { id: 55, text: "Zul", isError: false }
+                ]
+            },
+            {
+                id: 2,
+                subject: "Subject: School Clean-Up Day Success",
+                tokens: [
+                    { id: 0, text: "Hi", isError: false },
+                    { id: 1, text: "Siti,", isError: false },
+                    { id: 2, text: "our", isError: true, correct: "Our", hint: "Capitalization: Start sentence with capital letter" },
+                    { id: 3, text: "school", isEqual: false },
+                    { id: 4, text: "gotong-royong", isError: false },
+                    { id: 5, text: "was", isError: false },
+                    { id: 6, text: "a", isError: false },
+                    { id: 7, text: "huge", isError: false },
+                    { id: 8, text: "succes", isError: true, correct: "success", hint: "Spelling: Double 's' at the end of success" },
+                    { id: 9, text: "last", isError: false },
+                    { id: 10, text: "Saturday.", isError: false },
+                    { id: 11, text: "All", isError: false },
+                    { id: 12, text: "form", isError: true, correct: "Form", hint: "Capitalization: Proper noun Form 3" },
+                    { id: 13, text: "3", isError: false },
+                    { id: 14, text: "students", isError: false },
+                    { id: 15, text: "garthered", isError: true, correct: "gathered", hint: "Spelling: Correct spelling gathered" },
+                    { id: 16, text: "at", isError: false },
+                    { id: 17, text: "the", isError: false },
+                    { id: 18, text: "field", isError: false },
+                    { id: 19, text: "at", isError: false },
+                    { id: 20, text: "7.30", isError: false },
+                    { id: 21, text: "a.m.", isError: false },
+                    { id: 22, text: "We", isError: false },
+                    { id: 23, text: "swept", isError: false },
+                    { id: 24, text: "the", isError: false },
+                    { id: 25, text: "compound", isError: false },
+                    { id: 26, text: "cleared", isError: true, correct: "and cleared", hint: "Word Choice/Grammar: Need conjunction 'and'" },
+                    { id: 27, text: "clogged", isError: false },
+                    { id: 28, text: "drains.", isError: false },
+                    { id: 29, text: "The", isError: false },
+                    { id: 30, text: "principal", isError: false },
+                    { id: 31, text: "praised", isError: false },
+                    { id: 32, text: "us", isError: false },
+                    { id: 33, text: "for", isError: false },
+                    { id: 34, text: "our", isError: false },
+                    { id: 35, text: "hardwork", isError: true, correct: "hard work", hint: "Spelling: Two separate words 'hard work'" },
+                    { id: 36, text: "don't", isError: true, correct: "Don't", hint: "Capitalization: Start sentence with capital letter" },
+        { id: 37, text: "forget", isError: false },
+                    { id: 38, text: "to", isError: false },
+                    { id: 39, text: "bring", isError: false },
+                    { id: 40, text: "your", isError: false },
+                    { id: 41, text: "reusable", isError: false },
+                    { id: 42, text: "bottle", isError: false },
+                    { id: 43, text: "tomorrow", isError: true, correct: "tomorrow.", hint: "Punctuation: End with full stop" },
+                    { id: 44, text: "Best", isError: false },
+                    { id: 45, text: "regards,", isError: false },
+                    { id: 46, text: "Mei", isError: false },
+                    { id: 47, text: "Ling", isError: false }
+                ]
+            },
+            {
+                id: 3,
+                subject: "Subject: Annual Sports Day Highlights",
+                tokens: [
+                    { id: 0, text: "Dear", isError: false },
+                    { id: 1, text: "Editor,", isError: false },
+                    { id: 2, text: "i", isError: true, correct: "I", hint: "Capitalization: Pronoun 'I' must be uppercase" },
+                    { id: 3, text: "am", isError: false },
+                    { id: 4, text: "delighted", isError: false },
+                    { id: 5, text: "to", isError: false },
+                    { id: 6, text: "report", isError: false },
+                    { id: 7, text: "on", isError: false },
+                    { id: 8, text: "our", isError: false },
+                    { id: 9, text: "School", isError: false },
+                    { id: 10, text: "Sports", isError: false },
+                    { id: 11, text: "Day.", isError: false },
+                    { id: 12, text: "Yellow", isError: false },
+                    { id: 13, text: "house", isError: true, correct: "House", hint: "Capitalization: Proper name Yellow House" },
+                    { id: 14, text: "won", isError: false },
+                    { id: 15, text: "the", isError: false },
+                    { id: 16, text: "overall", isError: false },
+                    { id: 17, text: "championship", isError: false },
+                    { id: 18, text: "trophy", isError: false },
+                    { id: 19, text: "this", isError: false },
+                    { id: 20, text: "year", isError: true, correct: "year.", hint: "Punctuation: Full stop missing at end of sentence" },
+                    { id: 21, text: "The", isError: false },
+                    { id: 22, text: "athletes", isError: false },
+                    { id: 23, text: "runned", isError: true, correct: "ran", hint: "Word Choice: Past tense of run is ran" },
+                    { id: 24, text: "very", isError: false },
+                    { id: 25, text: "fast", isError: false },
+                    { id: 26, text: "in", isError: false },
+                    { id: 27, text: "the", isError: false },
+                    { id: 28, text: "100m", isError: false },
+                    { id: 29, text: "sprint.", isError: false },
+                    { id: 30, text: "Parents", isError: false },
+                    { id: 31, text: "cheered", isError: false },
+                    { id: 32, text: "loudly", isError: false },
+                    { id: 33, text: "from", isError: false },
+                    { id: 34, text: "the", isError: false },
+                    { id: 35, text: "grandstand", isError: true, correct: "grandstand.", hint: "Punctuation: End sentence with full stop" },
+                    { id: 36, text: "It", isError: false },
+                    { id: 37, text: "was", isError: false },
+                    { id: 38, text: "a", isError: false },
+                    { id: 39, text: "memorible", isError: true, correct: "memorable", hint: "Spelling: Spelled as memorable" },
+                    { id: 40, text: "event.", isError: false },
+                    { id: 41, text: "We", isError: false },
+                    { id: 42, text: "received", isError: false },
+                    { id: 43, text: "our", isError: false },
+                    { id: 44, text: "medals", isError: false },
+                    { id: 45, text: "with", isError: false },
+                    { id: 46, text: "proude", isError: true, correct: "pride", hint: "Word Choice: Noun form is pride" },
+                    { id: 47, text: "and", isError: false },
+                    { id: 48, text: "joy.", isError: false },
+                    { id: 49, text: "Regards,", isError: false },
+                    { id: 50, text: "Kamal", isError: false }
+                ]
+            },
+            {
+                id: 4,
+                subject: "Subject: Online Learning Workshop Experience",
+                tokens: [
+                    { id: 0, text: "Dear", isError: false },
+                    { id: 1, text: "Teacher", isError: false },
+                    { id: 2, text: "faqihah,", isError: true, correct: "Faqihah,", hint: "Capitalization: Teacher's name starts with capital letter" },
+                    { id: 3, text: "Thank", isError: false },
+                    { id: 4, text: "you", isError: false },
+                    { id: 5, text: "for", isError: false },
+                    { id: 6, text: "organising", isError: false },
+                    { id: 7, text: "the", isError: false },
+                    { id: 8, text: "useful", isError: false },
+                    { id: 9, text: "english", isError: true, correct: "English", hint: "Capitalization: Languages are capitalized" },
+                    { id: 10, text: "workshop.", isError: false },
+                    { id: 11, text: "I", isError: false },
+                    { id: 12, text: "learned", isError: false },
+                    { id: 13, text: "how", isError: false },
+                    { id: 14, text: "to", isError: false },
+                    { id: 15, text: "expand", isError: false },
+                    { id: 16, text: "notes", isError: false },
+                    { id: 17, text: "into", isError: false },
+                    { id: 18, text: "complete", isError: false },
+                    { id: 19, text: "sentences", isError: true, correct: "sentences.", hint: "Punctuation: Sentence ending full stop required" },
+                    { id: 20, text: "My", isError: false },
+                    { id: 21, text: "grammar", isError: false },
+                    { id: 22, text: "has", isError: false },
+                    { id: 23, text: "improved", isError: false },
+                    { id: 24, text: "significantly", isError: false },
+                    { id: 25, text: "because", isError: false },
+                    { id: 26, text: "I", isError: false },
+                    { id: 27, text: "practised", isError: false },
+                    { id: 28, text: "daily", isError: true, correct: "daily.", hint: "Punctuation: End with full stop" },
+                    { id: 29, text: "The", isError: false },
+                    { id: 30, text: "pac-man", isError: true, correct: "Pac-Man", hint: "Capitalization: Game name Pac-Man" },
+                    { id: 31, text: "theme", isError: false },
+                    { id: 32, text: "made", isError: false },
+                    { id: 33, text: "learning", isError: false },
+                    { id: 34, text: "very", isError: false },
+                    { id: 35, text: "fun", isError: false },
+                    { id: 36, text: "and", isError: false },
+                    { id: 37, text: "interessting.", isError: true, correct: "interesting.", hint: "Spelling: Correct spelling interesting" },
+                    { id: 38, text: "I", isError: false },
+                    { id: 39, text: "feel", isError: false },
+                    { id: 40, text: "more", isError: false },
+                    { id: 41, text: "confident", isError: false },
+                    { id: 42, text: "to", isError: false },
+                    { id: 43, text: "wrote", isError: true, correct: "write", hint: "Grammar: Base verb after 'to' infinitive" },
+                    { id: 44, text: "my", isError: false },
+                    { id: 45, text: "essays", isError: false },
+                    { id: 46, text: "now", isError: true, correct: "now.", hint: "Punctuation: Needs full stop" },
+                    { id: 47, text: "Yours", isError: false },
+                    { id: 48, text: "sincerely,", isError: false },
+                    { id: 49, text: "Aris", isError: false }
+                ]
+            },
+            {
+                id: 5,
+                subject: "Subject: Visit to Penang Heritage Sites",
+                tokens: [
+                    { id: 0, text: "Dear", isError: false },
+                    { id: 1, text: "Grandma,", isError: false },
+                    { id: 2, text: "we", isError: true, correct: "We", hint: "Capitalization: Start sentence with capital letter" },
+                    { id: 3, text: "had", isError: false },
+                    { id: 4, text: "a", isError: false },
+                    { id: 5, text: "wonderful", isError: false },
+                    { id: 6, text: "trip", isError: false },
+                    { id: 7, text: "to", isError: false },
+                    { id: 8, text: "penang", isError: true, correct: "Penang", hint: "Capitalization: Proper noun state name" },
+                    { id: 9, text: "last", isError: false },
+                    { id: 10, text: "weekend.", isError: false },
+                    { id: 11, text: "We", isError: false },
+                    { id: 12, text: "visited", isError: false },
+                    { id: 13, text: "Fort", isError: false },
+                    { id: 14, text: "Cornwallis", isError: false },
+                    { id: 15, text: "and", isError: false },
+                    { id: 16, text: "tasted", isError: false },
+                    { id: 17, text: "delisious", isError: true, correct: "delicious", hint: "Spelling: Correct spelling delicious" },
+                    { id: 18, text: "char", isError: false },
+                    { id: 19, text: "kway", isError: false },
+                    { id: 20, text: "teow.", isError: false },
+                    { id: 21, text: "My", isError: false },
+                    { id: 22, text: "brother", isError: false },
+                    { id: 23, text: "take", isError: true, correct: "took", hint: "Word Choice: Past tense of take is took" },
+                    { id: 24, text: "many", isError: false },
+                    { id: 25, text: "beautiful", isError: false },
+                    { id: 26, text: "photographs", isError: false },
+                    { id: 27, text: "of", isError: false },
+                    { id: 28, text: "street", isError: false },
+                    { id: 29, text: "art", isError: true, correct: "art.", hint: "Punctuation: End with full stop" },
+                    { id: 30, text: "I", isError: false },
+        { id: 31, text: "bought", isError: false },
+                    { id: 32, text: "a", isError: false },
+                    { id: 33, text: "souvenir", isError: false },
+                    { id: 34, text: "for", isError: false },
+                    { id: 35, text: "you", isError: true, correct: "you.", hint: "Punctuation: End with full stop" },
+                    { id: 36, text: "See", isError: false },
+                    { id: 37, text: "you", isError: false },
+                    { id: 38, text: "on", isError: false },
+                    { id: 39, text: "sunday", isError: true, correct: "Sunday", hint: "Capitalization: Days of the week" },
+                    { id: 40, text: "Love,", isError: true, correct: "Love,", hint: "Error fixed format standard" },
+                    { id: 41, text: "Nurul", isError: false }
+                ]
+            }
+        ];
+
+        /* MAIN APP CONTROLLER */
+        class PacmanApp {
+            constructor() {
+                this.student = { name: '', class: '' };
+                this.currentVerbIndex = 0;
+                this.verbScore = 0;
+                this.verbAttempts = 0; // Tracks 2-attempt system for Stage 1
+                this.tokenAttempts = {}; // Tracks 2-attempt system for Stage 2 tokens
+                this.currentEmailSet = 0;
+                this.emailScore = 0;
+                this.streak = 0;
+                this.selectedToken = null;
+                this.fixedErrorsPerSet = { 0: [], 1: [], 2: [], 3: [], 4: [] };
+                this.leaderboard = this.loadLeaderboard();
+            }
+
+            init() {
+                this.renderLeaderboard();
+            }
+
+            showPage(pageId) {
+                const pages = ['pageWelcome', 'pageVerbMaze', 'pageEmailFixer', 'pageTeacher'];
+                pages.forEach(p => {
+                    const el = document.getElementById(p);
+                    if (el) el.classList.add('hidden');
+                });
+
+                const topStats = document.getElementById('topStats');
+                if (pageId === 'welcome') {
+                    document.getElementById('pageWelcome').classList.remove('hidden');
+                    topStats.classList.add('hidden');
+                } else if (pageId === 'verb') {
+                    document.getElementById('pageVerbMaze').classList.remove('hidden');
+                    topStats.classList.remove('hidden');
+                    this.renderVerbMaze();
+                } else if (pageId === 'email') {
+                    document.getElementById('pageEmailFixer').classList.remove('hidden');
+                    topStats.classList.remove('hidden');
+                    this.renderEmailFixer();
+                } else if (pageId === 'teacher') {
+                    document.getElementById('pageTeacher').classList.remove('hidden');
+                    topStats.classList.add('hidden');
+                    this.renderLeaderboard();
+                }
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+
+            toggleModal(modalId, show) {
+                const el = document.getElementById(modalId);
+                if (el) {
+                    if (show) el.classList.remove('hidden');
+                    else el.classList.add('hidden');
+                }
+            }
+
+            startQuest(e) {
+                e.preventDefault();
+                const name = document.getElementById('studentName').value.trim();
+                const sClass = document.getElementById('studentClass').value;
+                if (!name || !sClass) return;
+
+                this.student = { name, class: sClass };
+                this.currentVerbIndex = 0;
+                this.verbScore = 0;
+                this.verbAttempts = 0;
+                this.tokenAttempts = {};
+                this.currentEmailSet = 0;
+                this.emailScore = 0;
+                this.streak = 0;
+                this.fixedErrorsPerSet = { 0: [], 1: [], 2: [], 3: [], 4: [] };
+                this.updateScoreDisplay();
+
+                soundManager.playPowerPelletSound();
+                this.showPage('verb');
+            }
+
+            updateScoreDisplay() {
+                const total = this.verbScore + this.emailScore;
+                document.getElementById('topScore').innerText = total;
+                document.getElementById('topStreak').innerText = this.streak;
+                document.getElementById('verbScoreDisplay').innerText = this.verbScore;
+                document.getElementById('emailScoreDisplay').innerText = this.emailScore;
+            }
+
+            /* --- STAGE 1: VERB MAZE LOGIC --- */
+            renderVerbMaze() {
+                const data = ACTION_VERB_DATA[this.currentVerbIndex];
+                document.getElementById('verbIndexDisplay').innerText = this.currentVerbIndex + 1;
+                this.verbAttempts = 0; // Reset attempt count for new question
+                
+                // Display plain sentence without highlights or bold tags
+                document.getElementById('sentenceText').innerText = data.sentence;
+                document.getElementById('verbInput').value = '';
+                document.getElementById('verbFeedback').innerHTML = '';
+                document.getElementById('verbInput').focus();
+
+                // Render 20 Pellet Maze Path
+                const mazeContainer = document.getElementById('mazePath');
+                mazeContainer.innerHTML = '';
+                for (let i = 0; i < 20; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'flex items-center justify-center min-w-[24px]';
+                    if (i === this.currentVerbIndex) {
+                        dot.innerHTML = `<div class="pacman-sprite animate-pulse text-xs text-black font-bold flex items-center justify-center" style="clip-path: circle(50% at 50% 50%);"><i class="fa-solid fa-chevron-right"></i></div>`;
+                    } else if (i < this.currentVerbIndex) {
+                        dot.innerHTML = `<i class="fa-solid fa-check text-neonGreen text-xs"></i>`;
+                    } else {
+                        dot.innerHTML = (i % 5 === 4) ? `<div class="power-pellet"></div>` : `<div class="pellet"></div>`;
+                    }
+                    mazeContainer.appendChild(dot);
+                }
+            }
+
+            submitVerbAnswer(e) {
+                e.preventDefault();
+                const userAns = document.getElementById('verbInput').value.trim().toLowerCase();
+                const targetVerb = ACTION_VERB_DATA[this.currentVerbIndex].verb.toLowerCase();
+                const feedbackEl = document.getElementById('verbFeedback');
+
+                if (userAns === targetVerb) {
+                    soundManager.playCorrectSound();
+                    soundManager.playPelletSound();
+                    this.streak++;
+                    const points = 100 + (this.streak * 10);
+                    this.verbScore += points;
+                    this.updateScoreDisplay();
+
+                    feedbackEl.innerHTML = `<span class="text-neonGreen animate-bounce block"><i class="fa-solid fa-circle-check"></i> EXCELLENT! +${points} PTS! PAC-MAN ATE THE ACTION VERB PELLET!</span>`;
+
+                    setTimeout(() => {
+                        this.advanceVerbQuestion();
+                    }, 1200);
+                } else {
+                    this.verbAttempts++;
+                    soundManager.playWrongSound();
+                    this.streak = 0;
+                    this.updateScoreDisplay();
+
+                    if (this.verbAttempts < 2) {
+                        feedbackEl.innerHTML = `<span class="text-blinky"><i class="fa-solid fa-circle-xmark"></i> INCORRECT (Attempt 1/2). Try again! Identify the main action word in the sentence.</span>`;
+                    } else {
+                        // 2nd Failed Attempt: Reveal answer & auto-advance
+                        feedbackEl.innerHTML = `<span class="text-clyde block"><i class="fa-solid fa-lightbulb"></i> OUT OF ATTEMPTS! The correct action verb was: <strong class="text-pacman uppercase underline">${targetVerb}</strong>. Moving to next question...</span>`;
+                        setTimeout(() => {
+                            this.advanceVerbQuestion();
+                        }, 2500);
+                    }
+                }
+            }
+
+            advanceVerbQuestion() {
+                this.currentVerbIndex++;
+                if (this.currentVerbIndex >= 20) {
+                    soundManager.playPowerPelletSound();
+                    alert("🎉 STAGE 1 COMPLETE! ADVANCING TO GHOST ERROR FIXER...");
+                    this.showPage('email');
+                } else {
+                    this.renderVerbMaze();
+                }
+            }
+
+            /* --- STAGE 2: EMAIL FIXER LOGIC --- */
+            renderEmailFixer() {
+                document.getElementById('emailSetDisplay').innerText = this.currentEmailSet + 1;
+                const emailData = EMAIL_SETS[this.currentEmailSet];
+                document.getElementById('emailSubjectLine').innerText = emailData.subject;
+
+                // Render Tabs
+                const tabsContainer = document.getElementById('emailTabs');
+                tabsContainer.innerHTML = '';
+                EMAIL_SETS.forEach((set, idx) => {
+                    const btn = document.createElement('button');
+                    const isDone = this.fixedErrorsPerSet[idx].length === 8;
+                    btn.className = `px-3 py-1.5 text-xs font-arcade rounded border transition flex items-center gap-1.5 ${
+                        idx === this.currentEmailSet 
+                            ? 'bg-mazeBlue text-pacman border-yellow-400 font-bold' 
+                            : isDone ? 'bg-green-950 text-neonGreen border-green-500' : 'bg-black/60 text-gray-400 border-gray-700'
+                    }`;
+                    btn.innerHTML = `EMAIL ${idx + 1} ${isDone ? '<i class="fa-solid fa-check"></i>' : ''}`;
+                    btn.onclick = () => { this.currentEmailSet = idx; this.renderEmailFixer(); };
+                    tabsContainer.appendChild(btn);
+                });
+
+                // Render Interactive Corrupted Email Tokens
+                const emailTextContainer = document.getElementById('interactiveEmailText');
+                emailTextContainer.innerHTML = '';
+
+                const fixedList = this.fixedErrorsPerSet[this.currentEmailSet];
+                document.getElementById('errorsFixedCount').innerText = fixedList.length;
+
+                emailData.tokens.forEach(token => {
+                    const span = document.createElement('span');
+                    span.className = 'inline-block mr-1.5 my-1 px-1 rounded cursor-pointer transition';
+                    
+                    const isFixed = fixedList.includes(token.id);
+
+                    if (isFixed) {
+                        span.className += ' bg-green-900/60 text-neonGreen font-bold border border-green-500/50';
+                        span.innerText = token.correct;
+                    } else if (token.isError) {
+                        span.className += ' hover:bg-red-900/80 hover:text-white border-b-2 border-dashed border-red-500';
+                        span.innerText = token.text;
+                        span.onclick = () => this.selectToken(token);
+                    } else {
+                        span.className += ' hover:bg-gray-800 text-gray-200';
+                        span.innerText = token.text;
+                        span.onclick = () => this.selectToken(token);
+                    }
+
+                    emailTextContainer.appendChild(span);
+                });
+
+                // Reset Selection Input Console
+                this.selectedToken = null;
+                document.getElementById('correctionPanel').classList.add('hidden');
+                document.getElementById('noSelectionPrompt').classList.remove('hidden');
+                document.getElementById('selectedWordLabel').innerText = 'No word selected';
+                
+                // Render Fixed Log
+                this.renderFixedLog();
+
+                // Prev/Next Nav state
+                document.getElementById('prevSetBtn').disabled = this.currentEmailSet === 0;
+                document.getElementById('prevSetBtn').style.opacity = this.currentEmailSet === 0 ? '0.5' : '1';
+                
+                if (this.currentEmailSet === 4 && this.allEmailErrorsFixed()) {
+                    document.getElementById('nextSetBtn').innerText = 'FINISH QUEST 🏆';
+                } else {
+                    document.getElementById('nextSetBtn').innerText = 'NEXT EMAIL >';
+                }
+            }
+
+            selectToken(token) {
+                soundManager.playPelletSound();
+                this.selectedToken = token;
+                document.getElementById('noSelectionPrompt').classList.add('hidden');
+                document.getElementById('correctionPanel').classList.remove('hidden');
+                document.getElementById('selectedWordLabel').innerText = `Selected: "${token.text}"`;
+                document.getElementById('currentTargetToken').innerText = token.text;
+                document.getElementById('correctionInput').value = '';
+                document.getElementById('correctionInput').focus();
+
+                const hintEl = document.getElementById('errorHint');
+                if (token.isError) {
+                    hintEl.innerText = `Hint: ${token.hint}`;
+                    hintEl.className = 'text-xs text-yellow-400 italic font-semibold';
+                } else {
+                    hintEl.innerText = 'This word looks fine! Click on an incorrect word or punctuation instead.';
+                    hintEl.className = 'text-xs text-gray-400 italic';
+                }
+            }
+
+            applyFix() {
+                if (!this.selectedToken) return;
+
+                const inputFix = document.getElementById('correctionInput').value.trim();
+                const token = this.selectedToken;
+                const fixedList = this.fixedErrorsPerSet[this.currentEmailSet];
+                const tokenKey = `${this.currentEmailSet}_${token.id}`;
+
+                if (!token.isError) {
+                    soundManager.playWrongSound();
+                    alert("This word has no errors! Look for mistakes in capitalization, spelling, punctuation, or word choice.");
+                    return;
+                }
+
+                if (fixedList.includes(token.id)) {
+                    alert("You have already fixed this error!");
+                    return;
+                }
+
+                if (inputFix.toLowerCase() === token.correct.toLowerCase()) {
+                    soundManager.playCorrectSound();
+                    fixedList.push(token.id);
+                    this.emailScore += 150;
+                    this.streak++;
+                    this.updateScoreDisplay();
+
+                    if (fixedList.length === 8) {
+                        soundManager.playPowerPelletSound();
+                        alert(`🌟 POWER-PELLET ACTIVATED! YOU CLEARED ALL 8 ERRORS IN EMAIL ${this.currentEmailSet + 1}! (+200 BONUS PTS)`);
+                        this.emailScore += 200;
+                        this.updateScoreDisplay();
+                    }
+
+                    this.renderEmailFixer();
+                } else {
+                    this.tokenAttempts[tokenKey] = (this.tokenAttempts[tokenKey] || 0) + 1;
+                    soundManager.playWrongSound();
+                    this.streak = 0;
+                    this.updateScoreDisplay();
+
+                    if (this.tokenAttempts[tokenKey] < 2) {
+                        alert(`Attempt 1/2 Incorrect. Try again! Hint: ${token.hint}`);
+                    } else {
+                        // 2nd Failed Attempt: Reveal correct answer & mark as completed without points
+                        alert(`Out of attempts! The correct repair was: "${token.correct}". Marked as revealed.`);
+                        fixedList.push(token.id); // Mark resolved to allow progression
+                        this.renderEmailFixer();
+                    }
+                }
+            }
+
+            renderFixedLog() {
+                const logContainer = document.getElementById('fixedLog');
+                logContainer.innerHTML = '';
+                const fixedIds = this.fixedErrorsPerSet[this.currentEmailSet];
+                const emailTokens = EMAIL_SETS[this.currentEmailSet].tokens;
+
+                if (fixedIds.length === 0) {
+                    logContainer.innerHTML = `<span class="text-xs text-gray-500 italic">No errors repaired yet.</span>`;
+                    return;
+                }
+
+                fixedIds.forEach(id => {
+                    const tok = emailTokens.find(t => t.id === id);
+                    if (tok) {
+                        const badge = document.createElement('span');
+                        badge.className = 'bg-green-950 text-neonGreen text-[11px] px-2 py-0.5 rounded border border-green-500 flex items-center gap-1 font-mono';
+                        badge.innerHTML = `<i class="fa-solid fa-check text-[9px]"></i> ${tok.text} ➔ ${tok.correct}`;
+                        logContainer.appendChild(badge);
+                    }
+                });
+            }
+
+            changeEmailSet(dir) {
+                if (dir === 1 && this.currentEmailSet === 4) {
+                    this.completeQuest();
+                    return;
+                }
+                const target = this.currentEmailSet + dir;
+                if (target >= 0 && target < 5) {
+                    this.currentEmailSet = target;
+                    this.renderEmailFixer();
+                }
+            }
+
+            allEmailErrorsFixed() {
+                return Object.values(this.fixedErrorsPerSet).every(arr => arr.length === 8);
+            }
+
+            /* --- FINAL CERTIFICATE & LEADERBOARD STORAGE --- */
+            completeQuest() {
+                const totalScore = this.verbScore + this.emailScore;
+                let title = 'Arcade Rookie';
+                if (totalScore >= 4500) title = 'Pac-Master Legend 👑';
+                else if (totalScore >= 3500) title = 'Ghost Buster Hero 👻';
+                else if (totalScore >= 2500) title = 'Essay Knight ⚔️';
+
+                // Save record
+                const record = {
+                    id: Date.now(),
+                    name: this.student.name || 'Anonymous Student',
+                    class: this.student.class || 'Form 3',
+                    verbScore: this.verbScore,
+                    emailScore: this.emailScore,
+                    totalScore: totalScore,
+                    title: title,
+                    date: new Date().toLocaleDateString()
+                };
+
+                this.saveRecord(record);
+
+                // Show Certificate Modal
+                document.getElementById('resName').innerText = record.name;
+                document.getElementById('resClass').innerText = record.class;
+                document.getElementById('resVerb').innerText = record.verbScore;
+                document.getElementById('resEmail').innerText = record.emailScore;
+                document.getElementById('resTotal').innerText = record.totalScore;
+                document.getElementById('resTitle').innerText = record.title;
+
+                this.toggleModal('resultModal', true);
+            }
+
+            saveRecord(record) {
+                this.leaderboard.push(record);
+                // Sort by total score descending
+                this.leaderboard.sort((a, b) => b.totalScore - a.totalScore);
+                localStorage.setItem('pacman_english_leaderboard', JSON.stringify(this.leaderboard));
+            }
+
+            loadLeaderboard() {
+                const stored = localStorage.getItem('pacman_english_leaderboard');
+                if (stored) {
+                    try { 
+                        const parsed = JSON.parse(stored);
+                        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+                    } catch (e) { }
+                }
+
+                // Initial default records (saved directly into LocalStorage to maintain persistence)
+                const defaults = [
+                    { id: 1, name: 'Ahmad Daniel', class: '3 Ibnu Sina', verbScore: 2100, emailScore: 3500, totalScore: 5600, title: 'Pac-Master Legend 👑', date: '2026-10-20' },
+                    { id: 2, name: 'Nur Aisyah', class: '3 Ibnu Sina', verbScore: 2000, emailScore: 3300, totalScore: 5300, title: 'Pac-Master Legend 👑', date: '2026-10-21' },
+                    { id: 3, name: 'Tan Jia Wei', class: '2 Al Farabi', verbScore: 1900, emailScore: 3100, totalScore: 5000, title: 'Ghost Buster Hero 👻', date: '2026-10-22' },
+                    { id: 4, name: 'Kavitha Raj', class: '1 Ibnu Sina', verbScore: 1800, emailScore: 2800, totalScore: 4600, title: 'Ghost Buster Hero 👻', date: '2026-10-23' },
+                    { id: 5, name: 'Muhammad Harith', class: '1 Al Batani', verbScore: 1700, emailScore: 2600, totalScore: 4300, title: 'Essay Knight ⚔️', date: '2026-10-24' }
+                ];
+                localStorage.setItem('pacman_english_leaderboard', JSON.stringify(defaults));
+                return defaults;
+            }
+
+            renderLeaderboard() {
+                const filter = document.getElementById('leaderboardFilter').value;
+                const tbody = document.getElementById('leaderboardBody');
+                tbody.innerHTML = '';
+
+                let filtered = this.leaderboard;
+                if (filter !== 'All') {
+                    filtered = this.leaderboard.filter(item => item.class === filter);
+                }
+
+                // Update Overview Metrics
+                document.getElementById('statTotalStudents').innerText = this.leaderboard.length;
+                
+                const avg = this.leaderboard.length > 0 
+                    ? Math.round(this.leaderboard.reduce((acc, r) => acc + r.totalScore, 0) / this.leaderboard.length)
+                    : 0;
+                document.getElementById('statAvgAccuracy').innerText = `${Math.min(100, Math.round((avg / 6000) * 100))}%`;
+
+                // Calculate Top Class
+                const classCounts = {};
+                this.leaderboard.forEach(r => { classCounts[r.class] = (classCounts[r.class] || 0) + r.totalScore; });
+                let topCls = '-';
+                let maxPts = 0;
+                for (let c in classCounts) {
+                    if (classCounts[c] > maxPts) { maxPts = classCounts[c]; topCls = c; }
+                }
+                document.getElementById('statTopClass').innerText = topCls;
+
+                const maxScore = this.leaderboard.length > 0 ? Math.max(...this.leaderboard.map(r => r.totalScore)) : 0;
+                document.getElementById('statHighScore').innerText = maxScore;
+
+                if (filtered.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-400 italic">No student records found for this class filter.</td></tr>`;
+                    return;
+                }
+
+                filtered.forEach((item, index) => {
+                    const tr = document.createElement('tr');
+                    tr.className = index % 2 === 0 ? 'bg-black/40 hover:bg-mazeBlue/20' : 'bg-mazeDark/40 hover:bg-mazeBlue/20';
+                    
+                    let rankBadge = `<span class="font-arcade text-gray-300">#${index + 1}</span>`;
+                    if (index === 0) rankBadge = `<span class="text-yellow-400 font-arcade text-sm">🥇 1st</span>`;
+                    else if (index === 1) rankBadge = `<span class="text-gray-300 font-arcade text-sm">🥈 2nd</span>`;
+                    else if (index === 2) rankBadge = `<span class="text-amber-600 font-arcade text-sm">🥉 3rd</span>`;
+
+                    tr.innerHTML = `
+                        <td class="p-3 font-bold">${rankBadge}</td>
+                        <td class="p-3 font-semibold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-ghost text-xs ${index === 0 ? 'text-pacman' : 'text-cyan-400'}"></i>
+                            ${item.name}
+                        </td>
+                        <td class="p-3"><span class="bg-gray-800 text-cyan-300 text-[10px] px-2 py-0.5 rounded font-mono">${item.class}</span></td>
+                        <td class="p-3 text-center text-yellow-300 font-mono">${item.verbScore}</td>
+                        <td class="p-3 text-center text-pinky font-mono">${item.emailScore}</td>
+                        <td class="p-3 text-center text-neonGreen font-bold font-mono text-sm">${item.totalScore}</td>
+                        <td class="p-3 text-center"><span class="text-[11px] font-arcade text-yellow-300">${item.title}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            exportData() {
+                if (this.leaderboard.length === 0) {
+                    alert("No data available to export!");
+                    return;
+                }
+                let csvContent = "data:text/csv;charset=utf-8,Rank,Name,Class,VerbScore,EmailScore,TotalScore,Title,Date\n";
+                this.leaderboard.forEach((r, idx) => {
+                    csvContent += `${idx + 1},"${r.name}","${r.class}",${r.verbScore},${r.emailScore},${r.totalScore},"${r.title}","${r.date}"\n`;
+                });
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `Teacher_Faqihah_Form3_English_Pacman_Report.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            clearLeaderboard() {
+                if (confirm("Are you sure you want to reset all recorded student scores?")) {
+                    this.leaderboard = [];
+                    localStorage.removeItem('pacman_english_leaderboard');
+                    this.renderLeaderboard();
+                }
+            }
+        }
+
+        const app = new PacmanApp();
+
+        window.onload = function() {
+            app.init();
+        };
+    </script>
+</body>
+</html>
